@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Stock Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>📈 Real-Time Stock Analysis</h1>
+        </header>
+
+        <!-- Stock Selection & Button -->
+        <section class="stock-selection-section">
+            <div class="search-container">
+                <label for="stockTicker">Choose a stock:</label>
+                <select id="stockTicker">
+                    <option value="TSLA">Tesla (TSLA)</option>
+                    <option value="NFLX">Netflix (NFLX)</option>
+                    <option value="AMZN">Amazon (AMZN)</option>
+                </select>
+                <button onclick="fetchStockData()">Analyze</button>
+            </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <section class="loading-section">
+            <div id="loading" class="hidden">Fetching Data...</div>
+        </section>
+
+        <!-- Result Section -->
+        <section class="result-section">
+            <h2>📰 Real-Time Market News & Analysis</h2>
+            
+            <h3>Stock Price Plot:</h3>
+            <img id="stockPlot" src="" alt="Stock Price Plot" />
+
+            <h3>📊 Stock Analysis & Recommendations:</h3>
+            <table id="analysisTable" class="stock-data-table">
+                <thead>
+                    <tr>
+                        <th>Indicator</th>
+                        <th>Value</th>
+                        <th>Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody id="analysisData"></tbody>
+            </table>
+
+            <h3>📊 Key Details:</h3>
+            <table id="keyDetailsTable" class="stock-data-table">
+                <thead>
+                    <tr>
+                        <th>Detail</th>
+                        <th>Information</th>
+                    </tr>
+                </thead>
+                <tbody id="keyDetailsData"></tbody>
+            </table>
+        </section>
+    </div>
+
+</body>
+</html>
