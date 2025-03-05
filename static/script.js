@@ -8,8 +8,8 @@ function fetchStockData() {
 
     document.getElementById("loading").classList.remove("hidden");
     document.getElementById("analysisData").innerHTML = "";
-    document.getElementById("keyDetailsData").innerHTML = "";  // Reset key details table
-    document.getElementById("stockPlot").src = ""; 
+    document.getElementById("keyDetailsData").innerHTML = "";
+    document.getElementById("stockPlot").src = "";
 
     fetch("/get_stock_data", {
         method: "POST",
@@ -21,16 +21,14 @@ function fetchStockData() {
         document.getElementById("loading").classList.add("hidden");
 
         // Populate Analysis Table
-        const analysis = data.analysis.split('\n');
         const analysisTable = document.getElementById("analysisData");
-        analysis.forEach(analysisItem => {
+        const analysisLines = data.analysis.split("\n");
+        analysisLines.forEach(line => {
             const row = document.createElement('tr');
-            const columns = analysisItem.split('|');  
-            columns.forEach(col => {
-                const cell = document.createElement('td');
-                cell.textContent = col.trim();
-                row.appendChild(cell);
-            });
+            const cell = document.createElement('td');
+            cell.colSpan = 3;
+            cell.textContent = line.trim();
+            row.appendChild(cell);
             analysisTable.appendChild(row);
         });
 
@@ -38,26 +36,15 @@ function fetchStockData() {
         const keyDetails = data.key_details;
         const keyDetailsTable = document.getElementById("keyDetailsData");
         for (const detail in keyDetails) {
-            const row = document.createElement('tr');
-            const cell1 = document.createElement('td');
-            const cell2 = document.createElement('td');
-
             if (typeof keyDetails[detail] === 'object') {
                 for (const subDetail in keyDetails[detail]) {
-                    const subRow = document.createElement('tr');
-                    const subCell1 = document.createElement('td');
-                    subCell1.textContent = `${subDetail}`;
-                    const subCell2 = document.createElement('td');
-                    subCell2.textContent = keyDetails[detail][subDetail];
-                    subRow.appendChild(subCell1);
-                    subRow.appendChild(subCell2);
-                    keyDetailsTable.appendChild(subRow);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${subDetail}</td><td>${keyDetails[detail][subDetail]}</td>`;
+                    keyDetailsTable.appendChild(row);
                 }
             } else {
-                cell1.textContent = detail;
-                cell2.textContent = keyDetails[detail];
-                row.appendChild(cell1);
-                row.appendChild(cell2);
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${detail}</td><td>${keyDetails[detail]}</td>`;
                 keyDetailsTable.appendChild(row);
             }
         }

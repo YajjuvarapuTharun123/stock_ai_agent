@@ -70,6 +70,7 @@ h2, h3 {
     height: auto;
     border-radius: 8px;
     margin-top: 20px;
+    width: 100%;
 }
 
 #loading {

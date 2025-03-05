@@ -7,7 +7,7 @@ from flask import Flask, render_template, jsonify, request
 from agno.agent import Agent
 from agno.models.groq import Groq
 from agno.tools.duckduckgo import DuckDuckGoTools
-from agno.tools.yfinance import YFinanceTools  # Import YFinanceTools
+from agno.tools.yfinance import YFinanceTools
 from dotenv import load_dotenv
 import os
 
@@ -21,36 +21,31 @@ groq_api = os.getenv("GROQ_API_KEY")
 def fetch_stock_data(company_ticker):
     stock = yf.Ticker(company_ticker)
     historical_data = stock.history(period="1mo")
-    historical_data.index = historical_data.index.astype(str)  # Convert timestamps to string
+    historical_data.index = historical_data.index.strftime('%Y-%m-%d')  # Corrected date format
     return historical_data
 
-# Function to create stock price plot with vertical date labels
+# ✅ Function to create stock price plot with formatted date labels
 def create_stock_plot(data):
-    # Set up seaborn style
     sns.set(style="darkgrid")
+    plt.figure(figsize=(12, 6))
     
-    # Create the plot
-    plt.figure(figsize=(10, 6))
+    # Plot stock prices
     sns.lineplot(x=data.index, y=data['Close'], label='Close Price')
     sns.lineplot(x=data.index, y=data['Open'], label='Open Price')
+    
     plt.title("Stock Price Over the Last Month")
     plt.xlabel("Date")
     plt.ylabel("Price (USD)")
-    
-    # Rotate the x-axis labels for better readability
-    plt.xticks(rotation=90)
-    
-    # Save the plot to a BytesIO object (in-memory file)
+    plt.xticks(rotation=45)  # Rotate for readability
+    plt.tight_layout()
+
+    # Save the plot as base64
     img = BytesIO()
     plt.savefig(img, format='png')
     img.seek(0)
-    
-    # Encode image as base64
     img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
-    
-    # Close the plot to avoid display in a non-interactive environment
     plt.close()
-    
+
     return img_base64
 
 # ✅ Agent Setup
@@ -58,11 +53,13 @@ stock_analysis_agent = Agent(
     name='Stock Analysis Agent',
     model=Groq(id="deepseek-r1-distill-llama-70b", api_key=groq_api),
     tools=[
-        YFinanceTools(stock_price=True, analyst_recommendations=True, company_info=True),  # Add YFinanceTools here
+        YFinanceTools(stock_price=True, analyst_recommendations=True, company_info=True),
         DuckDuckGoTools()
     ],
-    instructions=["Analyze the stock data, news, and provide recommendations (Buy, Hold, Sell).",
-                   "Ensure output is structured in tabular format with all key details."],
+    instructions=[
+        "Analyze the stock data, news, and provide recommendations (Buy, Hold, Sell).",
+        "Ensure output is structured in a clean format with key insights."
+    ],
     show_tool_calls=True,
     markdown=True
 )
@@ -75,7 +72,7 @@ def home():
 @app.route("/get_stock_data", methods=["POST"])
 def get_stock_data():
     data = request.json
-    ticker = data.get("ticker", "TSLA")  # Default to TSLA if no ticker is provided
+    ticker = data.get("ticker", "TSLA")  # Default to TSLA
 
     # Fetch stock data
     stock_data = fetch_stock_data(ticker)
@@ -83,8 +80,9 @@ def get_stock_data():
     # ✅ Structured Prompt for Agent
     structured_prompt = f"""
     Collect stock data for {ticker}, analyze recent news, and provide insights including:
+    
     - Historical stock prices, volume changes, and performance for the last month.
-    - Analyze key financial indicators such as moving averages, volatility, and momentum.
+    - Key financial indicators such as moving averages, volatility, and momentum.
     - Provide a recommendation (Buy, Hold, Sell) based on the analysis.
     """
 
@@ -93,17 +91,20 @@ def get_stock_data():
         analysis_result = stock_analysis_agent.run(structured_prompt)
         analysis_text = analysis_result.content if hasattr(analysis_result, 'content') else str(analysis_result)
 
+        # ✅ Cleaned-up Analysis Output (Removing `###` and `----`)
+        analysis_text = analysis_text.replace("###", "").replace("----", "").strip()
+
         # Create stock plot
         stock_plot_base64 = create_stock_plot(stock_data)
 
-        # Prepare structured data for table (key details)
+        # ✅ Key details structured data
         key_details = {
             "Stock Symbol": ticker,
             "Current Stock Price": f"${stock_data['Close'].iloc[-1]:.2f}",
             "Historical Performance": {
-                "1 Month": f"+{(stock_data['Close'].pct_change().iloc[-1] * 100):.2f}%",
-                "3 Months": f"+{(stock_data['Close'].pct_change(periods=3).iloc[-1] * 100):.2f}%",
-                "6 Months": f"+{(stock_data['Close'].pct_change(periods=6).iloc[-1] * 100):.2f}%"
+                "1 Month": f"{(stock_data['Close'].pct_change().iloc[-1] * 100):.2f}%",
+                "3 Months": f"{(stock_data['Close'].pct_change(periods=3).iloc[-1] * 100):.2f}%",
+                "6 Months": f"{(stock_data['Close'].pct_change(periods=6).iloc[-1] * 100):.2f}%"
             },
             "Volume Changes": {
                 "Average Volume (30D)": f"{stock_data['Volume'].mean():,.0f}",
@@ -115,8 +116,8 @@ def get_stock_data():
             },
             "Volatility": f"{stock_data['Close'].pct_change().std() * 100:.2f}%",
             "Momentum Indicators": {
-                "RSI (14)": "62.5",  # Placeholder for actual calculation
-                "MACD": "1.15"  # Placeholder for actual calculation
+                "RSI (14)": "62.5",  # Placeholder
+                "MACD": "1.15"  # Placeholder
             },
             "Analyst Recommendations": {
                 "Buy": "45%",
@@ -125,11 +126,10 @@ def get_stock_data():
             }
         }
 
-        # ✅ Return structured response
         return jsonify({
             "stock_data": stock_data.to_dict(),
-            "analysis": analysis_text.strip(),
-            "stock_plot": stock_plot_base64,  # Return the base64 image here
+            "analysis": analysis_text,
+            "stock_plot": stock_plot_base64,
             "key_details": key_details
         })
 
