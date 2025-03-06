@@ -1,7 +1,3 @@
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("loading").classList.add("hidden"); // Hide loading initially
-});
-
 async function fetchStockData() {
     const ticker = document.getElementById("stockTicker").value;
     const loadingDiv = document.getElementById("loading");
@@ -12,7 +8,7 @@ async function fetchStockData() {
 
     // Show loading animation
     loadingDiv.classList.remove("hidden");
-    stockPlot.src = "";
+    stockPlot.innerHTML = "";
     stockSummary.innerHTML = "";
     keyDetailsTable.innerHTML = "";
     stockRecommendation.innerHTML = "";
@@ -20,16 +16,21 @@ async function fetchStockData() {
     try {
         const response = await fetch("/get_stock_data", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ticker: ticker }),
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ ticker: ticker })
         });
 
         const data = await response.json();
+        loadingDiv.classList.add("hidden");
 
         if (data.error) {
             stockSummary.innerHTML = `<strong>Error:</strong> ${data.error}`;
         } else {
-            stockPlot.src = `data:image/png;base64,${data.stock_plot}`;
+            // Insert the Plotly chart HTML (base64 image) into the div
+            stockPlot.innerHTML = data.stock_plot;
+
             stockSummary.innerHTML = `
                 <strong>${data.key_details["Stock Symbol"]}</strong> is currently trading at 
                 <strong>${data.key_details["Current Stock Price"]}</strong>. 
@@ -65,9 +66,7 @@ async function fetchStockData() {
             stockRecommendation.innerHTML = `<strong>${data.recommendation}</strong>`;
         }
     } catch (error) {
-        stockSummary.innerHTML = `<strong>Error:</strong> Failed to fetch stock data.`;
-    } finally {
-        // Hide loading animation
         loadingDiv.classList.add("hidden");
+        stockSummary.innerHTML = `<strong>Error:</strong> ${error.message}`;
     }
 }
