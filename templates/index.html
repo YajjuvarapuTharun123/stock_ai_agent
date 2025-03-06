@@ -14,7 +14,7 @@
             <h1>📈 Real-Time Stock Analysis</h1>
         </header>
 
-        <!-- Stock Selection & Button -->
+        <!-- Stock Selection -->
         <section class="stock-selection-section">
             <div class="search-container">
                 <label for="stockTicker">Choose a stock:</label>
@@ -22,6 +22,9 @@
                     <option value="TSLA">Tesla (TSLA)</option>
                     <option value="NFLX">Netflix (NFLX)</option>
                     <option value="AMZN">Amazon (AMZN)</option>
+                    <option value="RELIANCE.NS">Reliance (RELIANCE.NS)</option>
+                    <option value="TCS.NS">TCS (TCS.NS)</option>
+                    <option value="INFY">Infosys (INFY)</option>
                 </select>
                 <button onclick="fetchStockData()">Analyze</button>
             </div>
@@ -29,27 +32,20 @@
 
         <!-- Loading Indicator -->
         <section class="loading-section">
-            <div id="loading" class="hidden">Fetching Data...</div>
+            <div id="loading" class="hidden">
+                ⏳ Fetching Data... Please wait.
+            </div>
         </section>
 
         <!-- Result Section -->
         <section class="result-section">
             <h2>📰 Real-Time Market News & Analysis</h2>
-            
+
             <h3>Stock Price Plot:</h3>
             <img id="stockPlot" src="" alt="Stock Price Plot" />
 
-            <h3>📊 Stock Analysis & Recommendations:</h3>
-            <table id="analysisTable" class="stock-data-table">
-                <thead>
-                    <tr>
-                        <th>Indicator</th>
-                        <th>Value</th>
-                        <th>Recommendation</th>
-                    </tr>
-                </thead>
-                <tbody id="analysisData"></tbody>
-            </table>
+            <h3>📊 Stock Analysis Summary:</h3>
+            <p id="stockSummary"></p>
 
             <h3>📊 Key Details:</h3>
             <table id="keyDetailsTable" class="stock-data-table">
@@ -61,6 +57,14 @@
                 </thead>
                 <tbody id="keyDetailsData"></tbody>
             </table>
+
+            <h3>📢 Recommendation:</h3>
+            <p id="stockRecommendation"></p>
+
+            <h3>⚠️ Disclaimer:</h3>
+            <p class="disclaimer">
+                This stock analysis is for informational purposes only and should not be considered financial advice. Please conduct your own research before making investment decisions.
+            </p>
         </section>
     </div>
 

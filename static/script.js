@@ -1,60 +1,73 @@
-function fetchStockData() {
-    let ticker = document.getElementById("stockTicker").value;
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("loading").classList.add("hidden"); // Hide loading initially
+});
 
-    if (!ticker) {
-        alert("Please select a stock symbol!");
-        return;
-    }
+async function fetchStockData() {
+    const ticker = document.getElementById("stockTicker").value;
+    const loadingDiv = document.getElementById("loading");
+    const stockPlot = document.getElementById("stockPlot");
+    const stockSummary = document.getElementById("stockSummary");
+    const keyDetailsTable = document.getElementById("keyDetailsData");
+    const stockRecommendation = document.getElementById("stockRecommendation");
 
-    document.getElementById("loading").classList.remove("hidden");
-    document.getElementById("analysisData").innerHTML = "";
-    document.getElementById("keyDetailsData").innerHTML = "";
-    document.getElementById("stockPlot").src = "";
+    // Show loading animation
+    loadingDiv.classList.remove("hidden");
+    stockPlot.src = "";
+    stockSummary.innerHTML = "";
+    keyDetailsTable.innerHTML = "";
+    stockRecommendation.innerHTML = "";
 
-    fetch("/get_stock_data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticker: ticker })
-    })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById("loading").classList.add("hidden");
-
-        // Populate Analysis Table
-        const analysisTable = document.getElementById("analysisData");
-        const analysisLines = data.analysis.split("\n");
-        analysisLines.forEach(line => {
-            const row = document.createElement('tr');
-            const cell = document.createElement('td');
-            cell.colSpan = 3;
-            cell.textContent = line.trim();
-            row.appendChild(cell);
-            analysisTable.appendChild(row);
+    try {
+        const response = await fetch("/get_stock_data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ticker: ticker }),
         });
 
-        // Populate Key Details Table
-        const keyDetails = data.key_details;
-        const keyDetailsTable = document.getElementById("keyDetailsData");
-        for (const detail in keyDetails) {
-            if (typeof keyDetails[detail] === 'object') {
-                for (const subDetail in keyDetails[detail]) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${subDetail}</td><td>${keyDetails[detail][subDetail]}</td>`;
-                    keyDetailsTable.appendChild(row);
-                }
-            } else {
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${detail}</td><td>${keyDetails[detail]}</td>`;
-                keyDetailsTable.appendChild(row);
-            }
-        }
+        const data = await response.json();
 
-        // Set the plot image
-        document.getElementById("stockPlot").src = "data:image/png;base64," + data.stock_plot;
-    })
-    .catch(error => {
-        document.getElementById("loading").classList.add("hidden");
-        alert("Error fetching stock data!");
-        console.error(error);
-    });
+        if (data.error) {
+            stockSummary.innerHTML = `<strong>Error:</strong> ${data.error}`;
+        } else {
+            stockPlot.src = `data:image/png;base64,${data.stock_plot}`;
+            stockSummary.innerHTML = `
+                <strong>${data.key_details["Stock Symbol"]}</strong> is currently trading at 
+                <strong>${data.key_details["Current Stock Price"]}</strong>. 
+                Over the past month, the stock has changed by 
+                <strong>${data.key_details["Historical Performance"]["1 Month"]}</strong>. 
+                The average 30-day trading volume is 
+                <strong>${data.key_details["Volume Changes"]["Average Volume (30D)"]}</strong>, 
+                with the most recent volume at <strong>${data.key_details["Volume Changes"]["Current Volume"]}</strong>.
+            `;
+
+            // Populate key details table
+            Object.entries(data.key_details).forEach(([key, value]) => {
+                if (typeof value === "object") {
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        keyDetailsTable.innerHTML += `
+                            <tr>
+                                <td>${subKey}</td>
+                                <td>${subValue}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    keyDetailsTable.innerHTML += `
+                        <tr>
+                            <td>${key}</td>
+                            <td>${value}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            // Display recommendation
+            stockRecommendation.innerHTML = `<strong>${data.recommendation}</strong>`;
+        }
+    } catch (error) {
+        stockSummary.innerHTML = `<strong>Error:</strong> Failed to fetch stock data.`;
+    } finally {
+        // Hide loading animation
+        loadingDiv.classList.add("hidden");
+    }
 }
